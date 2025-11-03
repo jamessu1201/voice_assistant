@@ -1,0 +1,7 @@
+sdk.dir=/path/to/your/Android/sdk
+
+# Porcupine Access Key (從 https://console.picovoice.ai/ 取得)
+PORCUPINE_ACCESS_KEY=your_access_key_here
+
+# Server URL (你的 LLM 後端位址)
+SERVER_URL=http://your_server_ip:8080
