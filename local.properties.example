@@ -5,3 +5,6 @@ PORCUPINE_ACCESS_KEY=your_access_key_here
 
 # Server URL (你的 LLM 後端位址)
 SERVER_URL=http://your_server_ip:8080
+
+// Spotify Client ID
+private const val CLIENT_ID = "YOUR_SPOTIFY_CLIENT_ID_HERE"

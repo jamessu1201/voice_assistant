@@ -16,6 +16,9 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        // Spotify redirect URI
+        manifestPlaceholders["redirectSchemeName"] = "voiceassistant"
+        manifestPlaceholders["redirectHostName"] = "callback"
 
         // 👇 從 local.properties 讀取環境變數
         val localPropertiesFile = rootProject.file("local.properties")
@@ -34,6 +37,10 @@ android {
         val serverUrl = properties.getProperty("SERVER_URL")
             ?: "http://10.0.2.2:8080"
         buildConfigField("String", "SERVER_URL", "\"$serverUrl\"")
+
+        val clientId = properties.getProperty("CLIENT_ID")
+            ?: "YOUR_CLIENT_ID_HERE"
+        buildConfigField("String", "CLIENT_ID", "\"$clientId\"")
     }
 
     buildTypes {
@@ -57,7 +64,7 @@ android {
 
     buildFeatures {
         viewBinding = true
-        buildConfig = true  // 👈 重要：啟用 BuildConfig
+        buildConfig = true
     }
 }
 
@@ -78,4 +85,13 @@ dependencies {
 
     // Porcupine
     implementation("ai.picovoice:porcupine-android:3.0.2")
+
+    // Spotify SDK
+    implementation("com.spotify.android:auth:2.1.1")
+
+    // Spotify App Remote - 改成你下載的檔案名稱
+    implementation(files("libs/spotify-app-remote-release-0.8.0.aar"))
+
+    // Gson - Required by Spotify SDK  👈 加這行
+    implementation("com.google.code.gson:gson:2.10.1")
 }
