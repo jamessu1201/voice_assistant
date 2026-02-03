@@ -862,13 +862,44 @@ class VoiceAssistantService : Service() {
 
                 val buffer = ByteArray(bufferSize)
                 var totalBytesRead = 0
-                val maxDuration = 5000L
+                val maxDuration = 10000L
                 val startTime = System.currentTimeMillis()
 
-                var silenceCount = 0
-                val silenceThreshold = 500
-                val maxSilenceFrames = 20
+                // ==================== 🆕 動態閾值計算 ====================
+                // 先收集 0.3 秒的背景噪音作為基準
+                var baselineAmplitude = 0
+                var baselineSamples = 0
+                val baselineDuration = 300L  // 0.3 秒
 
+                Log.d(TAG, "📊 收集背景噪音...")
+                while ((System.currentTimeMillis() - startTime) < baselineDuration) {
+                    val bytesRead = audioRecord?.read(buffer, 0, buffer.size) ?: 0
+                    if (bytesRead > 0) {
+                        outputStream.write(buffer, 0, bytesRead)
+                        totalBytesRead += bytesRead
+                        baselineAmplitude += calculateAmplitude(buffer, bytesRead)
+                        baselineSamples++
+                    }
+                }
+
+                // 計算平均背景噪音
+                val avgBaseline = if (baselineSamples > 0) baselineAmplitude / baselineSamples else 100
+
+                // 動態設定閾值（根據環境自動調整）
+                val silenceThreshold = maxOf(avgBaseline * 2, 100)      // 靜音 = 背景噪音 x2，最低 100
+                val voiceThreshold = maxOf(avgBaseline * 5, 400)        // 語音 = 背景噪音 x5，最低 400
+                val maxSilenceFrames = 30  // 約 1 秒靜音
+
+                Log.d(TAG, "📊 背景噪音=$avgBaseline → 靜音閾值=$silenceThreshold, 語音閾值=$voiceThreshold")
+
+                // 最小錄音時間保護（至少錄 1.5 秒才能因靜音停止）
+                val minRecordingBytes = (SAMPLE_RATE * 2 * 1.5).toInt()
+
+                var silenceCount = 0
+                var hasDetectedVoice = false
+                var maxAmplitude = avgBaseline
+
+                // ==================== 主錄音循環 ====================
                 while (isRecording && (System.currentTimeMillis() - startTime) < maxDuration) {
                     val bytesRead = audioRecord?.read(buffer, 0, buffer.size) ?: 0
 
@@ -878,17 +909,40 @@ class VoiceAssistantService : Service() {
 
                         val amplitude = calculateAmplitude(buffer, bytesRead)
 
-                        if (amplitude < silenceThreshold) {
+                        if (amplitude > maxAmplitude) {
+                            maxAmplitude = amplitude
+                        }
+
+                        if (amplitude > voiceThreshold) {
+                            // 檢測到語音
+                            hasDetectedVoice = true
+                            silenceCount = 0
+                        } else if (amplitude < silenceThreshold) {
+                            // 低於靜音閾值
                             silenceCount++
-                            if (silenceCount > maxSilenceFrames && totalBytesRead > SAMPLE_RATE * 2) {
-                                Log.d(TAG, "檢測到靜音，停止錄音")
+                            if (hasDetectedVoice &&
+                                silenceCount > maxSilenceFrames &&
+                                totalBytesRead > minRecordingBytes) {
+                                Log.d(TAG, "檢測到靜音，停止錄音 (amp=$amplitude < $silenceThreshold)")
                                 break
                             }
                         } else {
-                            silenceCount = 0
+                            // 介於兩者之間（可能是尾音或輕聲）
+                            if (hasDetectedVoice) {
+                                silenceCount++
+                                if (silenceCount > maxSilenceFrames * 2 && totalBytesRead > minRecordingBytes) {
+                                    Log.d(TAG, "檢測到低音量，停止錄音 (amp=$amplitude)")
+                                    break
+                                }
+                            } else {
+                                silenceCount = 0
+                            }
                         }
                     }
                 }
+
+                val duration = (System.currentTimeMillis() - startTime) / 1000.0
+                Log.d(TAG, "錄音統計：時長=${duration}s, baseline=$avgBaseline, maxAmp=$maxAmplitude, hasVoice=$hasDetectedVoice")
 
                 isRecording = false
                 audioRecord?.stop()
