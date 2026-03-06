@@ -1,0 +1,7 @@
+# Whisper Server (3090) 的依賴
+fastapi
+uvicorn
+faster-whisper
+opencc-python-reimplemented
+noisereduce
+numpy

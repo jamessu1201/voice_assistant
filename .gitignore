@@ -39,3 +39,50 @@ google-services.json
 
 # Sensitive data
 secrets.properties
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+venv/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 環境
+.env
+*.log
+
+# 測試
+.pytest_cache/
+htmlcov/
+.coverage
+
+# 音檔（測試用的 fixture 除外）
+*.wav
+*.mp3
+*.flac
+!tests/fixtures/*.wav
+
+# 模型檔案（太大不進 Git）
+*.onnx
+*.bin
+*.pt
+*.pth
+
+# Android（如果 android/ 資料夾已經有自己的 .gitignore 就不需要這些）
+# *.apk
+# android/app/build/
+# android/.gradle/
+
+# 系統
+.DS_Store
+Thumbs.db
