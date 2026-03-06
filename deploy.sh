@@ -14,7 +14,7 @@ set -e
 WHISPER_HOST="100.81.58.112"          # 3090 的 Tailscale IP
 WHISPER_USER="$USER"                   # 3090 的使用者名稱，預設同當前用戶
 WHISPER_DIR="~/voice-assistant"        # 3090 上的專案路徑
-# WHISPER_RESTART_CMD="systemctl --user restart whisper"  # 取消註解並修改為你的重啟方式
+WHISPER_RESTART_CMD="systemctl --user restart whisper"  # 取消註解並修改為你的重啟方式
 
 # ============================================================
 # 顏色
@@ -38,7 +38,7 @@ deploy_whisper() {
     git push
     
     echo "  在 3090 上 pull..."
-    ssh ${WHISPER_USER}@${WHISPER_HOST} "cd ${WHISPER_DIR} && git pull"
+    ssh joan3825@100.81.58.112 "cd /mnt/home/joan3825/code/voice_assistant && git pull && sudo systemctl restart whisper-server"
     
     # 方式二：直接 rsync（如果不想用 Git）
     # rsync -avz --delete ./server/whisper/ ${WHISPER_USER}@${WHISPER_HOST}:${WHISPER_DIR}/server/whisper/
